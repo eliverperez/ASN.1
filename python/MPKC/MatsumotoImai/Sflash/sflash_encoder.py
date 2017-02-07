@@ -17,15 +17,30 @@ class SflashEncoder(MIEncoder):
 		self.extensionField = K
 		self.ring = KR'''
 
+	def printHeader(self, key):
+		if(key == "public"):
+			return '-----BEGIN SFLASH PUBLIC KEY BLOCK-----\n'
+		else:
+			return '-----BEGIN SFLASH PRIVATE KEY BLOCK-----\n'
+
+	def printFooter(self, key):
+		if(key == "public"):
+			return '\n-----END SFLASH PUBLIC KEY BLOCK-----'
+		else:
+			return '\n-----END SFLASH PRIVATE KEY BLOCK-----'	
+
 	def encodePublic(self, publicKey):
 		pubRecord = SflashPublicRecord()
 		system = publicKey.getSystem()
 		n = system.parent().base_ring().ngens()
+		# print "pubRecord.encode(self.encoding)"
+		# print pubRecord.encode(self.encoding)
 		systemBin = self.encodeSystem(publicKey.getSystem(), 1)
 		#lst = [[2, n], [2, systemBin]]
 		pubRecord.setNvars(len(system.parent().gens()))
 		pubRecord.setPublicSystem(systemBin)
-		return header + base64.b64encode(pubRecord.encode(self.encoding)) + footer
+		# self.printKey(base64.b64encode(pubRecord.encode(self.encoding)))
+		return self.printHeader("public") + self.printKey(base64.b64encode(pubRecord.encode(self.encoding))) + self.printFooter("public")
 		#return self.encode(lst)
 
 	'''
@@ -43,9 +58,25 @@ class SflashEncoder(MIEncoder):
 		privRecord.setNdim(n)
 		privRecord.setMdim(m)
 		privRecord.setDelta(privateKey.getDelta())
-		return header + base64.b64encode(privRecord.encode(self.encoding)) + footer
+		return self.printHeader("private") + self.printKey(base64.b64encode(privRecord.encode(self.encoding))) + self.printFooter("private")
 		#lst = [[2, privateKey.getDelta()], [2, m], [2, affine1Bin], [2, n], [2, affine2Bin]]
 		#return self.encoder.encode(lst)
+
+	def printKey(self, key):
+		length = 80
+		rem = len(key) % length
+		lines = int(len(key) / length)
+		asnkey = ""
+		for i in range(lines):
+			asnkey += key[length * i:(length*i) + length] + "\n"
+		if(rem != 0):
+			asnkey += key[length * lines:(length*lines) + length]
+		# print "\n\n\nkey"
+		# print key
+		# print "\n\n\nasnkey"
+		# print asnkey
+		return asnkey
+
 
 '''	def decodePublic(self, b64Str):
 		l = len(base64Str)
