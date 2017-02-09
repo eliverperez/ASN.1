@@ -1,8 +1,8 @@
-from mq_encoder import MQEncoder
-from mi_record import *
+from mq_decoder import MQDecoder
+from Encoder.mi_record import *
 #from ..Utils.asn1 import ASN1
 
-class MIEncoder(MQEncoder):
+class MIDecoder(MQDecoder):
 	def encodePublic(self, publicKey):
 		pubRecord = MIPublicRecord()
 		baseField = publicKey.getBaseField()

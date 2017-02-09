@@ -1,44 +1,13 @@
-from sflash_record import *
-from mi_encoder import MIEncoder
+from Encoder.sflash_record import *
+from mi_decoder import MIDecoder
 from Utils import utils
 import base64
+from sage.all import *
+from sage.rings import *
 
 header = '-----BEGIN SFLASH PRIVATE KEY BLOCK-----\n'
 footer = '\n-----END SFLASH PRIVATE KEY BLOCK-----'
-class SflashEncoder(MIEncoder):
-	'''def __init__(self):
-		super(SflashEncoder, self).__init__()
-		R.<X>=GF(2)[]
-		k.<x>=GF(2**7,X**7+X+1)
-		Rk.<T>=k[]
-		K.<t>=k.extension(T**37+T**12+T**10+T**2+1)
-		KR=PolynomialRing(K, "x", K.degree(), order='deglex')
-		self.baseField = k
-		self.extensionField = K
-		self.ring = KR'''
-
-	def printHeader(self, key):
-		if(key == "public"):
-			return '-----BEGIN SFLASH PUBLIC KEY BLOCK-----\n'
-		else:
-			return '-----BEGIN SFLASH PRIVATE KEY BLOCK-----\n'
-
-	def printFooter(self, key):
-		if(key == "public"):
-			return '\n-----END SFLASH PUBLIC KEY BLOCK-----'
-		else:
-			return '\n-----END SFLASH PRIVATE KEY BLOCK-----'	
-
-	def encodePublic(self, publicKey):
-		pubRecord = SflashPublicRecord()
-		system = publicKey.getSystem()
-		n = system.parent().base_ring().ngens()
-		systemBin = self.encodeSystem(publicKey.getSystem(), 1)
-		#lst = [[2, n], [2, systemBin]]
-		pubRecord.setNvars(len(system.parent().gens()))
-		pubRecord.setPublicSystem(systemBin)
-		return self.printHeader("public") + self.printKey(base64.b64encode(pubRecord.encode(self.encoding))) + self.printFooter("public")
-		#return self.encode(lst)
+class SflashDecoder(MIDecoder):
 
 	def decodePublicKey(self, file):
 		pubRecord = SflashPublicRecord()
@@ -46,33 +15,34 @@ class SflashEncoder(MIEncoder):
 		lines = file.readlines()
 		for i in xrange(1, len(lines) - 1):
 			encoded += lines[i]
-		print pubRecord.decode(self.encoding, encoded)
-		return encoded
+		decoded = pubRecord.decode(self.encoding, base64.b64decode(encoded))
+		p = int(decoded[0][0].prettyPrint())
+		baseField = int(decoded[0][1].prettyPrint())
+		n = int(decoded[0][2].prettyPrint())
+		# Declare polynomial ring over field Fp**baseField over n variables
+		# R.<X> = GF(p)[]
+		# k.<x> = GF(p**baseField, GF(p)['X'].irreducible_element(baseField))
+		# K = PolynomialRing(k, "x", n, order='deglex')
+		# Recover binary polynomials
+		polySize = ((n+1)*(n+2)*baseField / 2)
+		# polynomials = bin(int(decoded[0][3].prettyPrint()))[2:]
+		polynomials = decoded[0][3].prettyPrint()
+		res = polySize - (len(polynomials) % polySize)
+		# Fill with zeros binary string
+		if(res != polySize):
+			for i in range(res):
+				polynomials = "0" + polynomials
+		# PolySet = genPolynomials(polynomials, n + 1, len(polynomials) / polySize, getVars(K), k, baseField, K)
+		return n, p, baseField, polynomials
 
-	def encodePublicKey(self, publicKey, n, p, baseField):
-		pubRecord = SflashPublicRecord()
-		system = publicKey
-		n = system[0].parent().base_ring().ngens()
-		systemBin = self.encodeSystem(system, baseField)
-		pubRecord.setNvars(len(system[0].parent().gens()))
-		# pubRecord.setNvars(n)
-		pubRecord.setPrimeField(p)
-		pubRecord.setBaseField(baseField)
-		pubRecord.setPublicSystem(systemBin)
-		return self.printHeader("public") + self.printKey(base64.b64encode(pubRecord.encode(self.encoding))) + self.printFooter("public")
+	def getVars(self, K):
+		vars = []
+		vars.append(1)
+		for i in range(n):
+			vars.append(K.gens()[i])
+		return vars
 
-	def encodePublicKeyBin(self, publicKey, n, p, baseField, systemBin):
-		pubRecord = SflashPublicRecord()
-		system = publicKey
-		n = system[0].parent().base_ring().ngens()
-		pubRecord.setNvars(len(system[0].parent().gens()))
-		# pubRecord.setNvars(n)
-		pubRecord.setPrimeField(p)
-		pubRecord.setBaseField(baseField)
-		pubRecord.setPublicSystem(systemBin)
-		return self.printHeader("public") + self.printKey(base64.b64encode(pubRecord.encode(self.encoding))) + self.printFooter("public")
-
-	def genPolynomials(self, n, m, vars, F, d, K):
+	def genPolynomials(self, polynomials, n, m, vars, F, d, K):
 		binSize = ((n * (n + 1)) / 2) * d
 		PolySet = []
 	    	pol = []
@@ -82,8 +52,7 @@ class SflashEncoder(MIEncoder):
 		x = F.gen()
 		for i in range(m):
 			polynomial = Integer(getrandbits(binSize)).binary()
-			if(len(polynomial) < binSize):
-				polynomial = fillZeros(polynomial, binSize)
+			polynomial = polynomials[i*binSize:(i*binSize) + binSize]
 			z = 0
 			poly = 0
 			for j in range(n):
@@ -101,37 +70,6 @@ class SflashEncoder(MIEncoder):
 			#PolySet.append(poly)
 	        	PolySet[i] = poly
 		return PolySet
-
-	'''
-	'''
-	def encodePrivate(self, privateKey):
-		privRecord = SflashPrivateRecord()
-		affine1 = privateKey.getAffine1()
-		affine2 = privateKey.getAffine2()
-		affine1Bin = self.encodeAffine(affine1, 1)
-		affine2Bin = self.encodeAffine(affine2, 1)
-		m = affine1.parent().degree()
-		n = affine2.parent().degree()
-		privRecord.setAffine1(affine1Bin)
-		privRecord.setAffine2(affine2Bin)
-		privRecord.setNdim(n)
-		privRecord.setMdim(m)
-		privRecord.setDelta(privateKey.getDelta())
-		return self.printHeader("private") + self.printKey(base64.b64encode(privRecord.encode(self.encoding))) + self.printFooter("private")
-		#lst = [[2, privateKey.getDelta()], [2, m], [2, affine1Bin], [2, n], [2, affine2Bin]]
-		#return self.encoder.encode(lst)
-
-	def printKey(self, key):
-		length = 80
-		rem = len(key) % length
-		lines = int(len(key) / length)
-		asnkey = ""
-		for i in range(lines):
-			asnkey += key[length * i:(length*i) + length] + "\n"
-		if(rem != 0):
-			asnkey += key[length * lines:(length*lines) + length]
-		return asnkey
-
 
 '''	def decodePublic(self, b64Str):
 		l = len(base64Str)

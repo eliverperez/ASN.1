@@ -21,7 +21,7 @@ class Record(univ.Sequence):
 			from pyasn1.codec.der import decoder
 		else:
 			ValueError('Unknown encoding')
-		self = decoder.decode(code)
+		return decoder.decode(code)
 
 	def __str__(self):
 		return self.prettyPrint()

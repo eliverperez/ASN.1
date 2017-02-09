@@ -5,6 +5,7 @@ from brial        import Variable
 from brial.gbrefs import load_file
 from brial.gbcore import groebner_basis
 from Encoder.sflash_encoder import SflashEncoder
+from Decoder.sflash_decoder import SflashDecoder
 from Utils.asn1 import ASN1
 
 #Biblioteca para generar numeros enteros aleatorios
@@ -151,7 +152,8 @@ def generatePolynomials(n, m, vars, F):
     return PolySet
 
 def genPolynomials(n, m, vars, F, d, K):
-	binSize = ((n * (n + 1)) / 2) * d
+	binSize = ((n * (n + 1) * d) / 2)
+    	p = 0
 	PolySet = []
     	pol = []
     	for i in range(m):
@@ -159,7 +161,9 @@ def genPolynomials(n, m, vars, F, d, K):
     	PolySet = vector(K, pol)
 	x = F.gen()
 	for i in range(m):
-		polynomial = Integer(getrandbits(binSize)).binary()
+            	polynomialInt = Integer(getrandbits(binSize))
+		polynomial = polynomialInt.binary()
+        	p = (p << binSize) | polynomialInt
 		if(len(polynomial) < binSize):
 			polynomial = fillZeros(polynomial, binSize)
 		z = 0
@@ -178,7 +182,7 @@ def genPolynomials(n, m, vars, F, d, K):
 				poly += coefficient * (vars[j] * vars[k])
 		#PolySet.append(poly)
         	PolySet[i] = poly
-	return PolySet
+	return PolySet, p
 
 
 def writePolynomialsSageFormat(polynomials):
@@ -305,6 +309,35 @@ def generateQPolynomials(p, k, m):
             Q[i] += k.random_element() * p[j]
     return Q
 
+def decodePolynomials(polynomials, n, m, vars, F, d, K):
+        binSize = ((n * (n + 1)) / 2) * d
+        PolySet = []
+        pol = []
+        for i in range(m):
+            pol.append(0)
+        PolySet = vector(K, pol)
+        x = F.gen()
+        for i in range(m):
+            # polynomial = Integer(getrandbits(binSize)).binary()
+            polynomial = polynomials[i*binSize:(i*binSize) + binSize]
+            z = 0
+            poly = 0
+            for j in range(n):
+                for k in xrange(j, n):
+                    index = d*z
+                    coef = polynomial[index:index + d]
+                    z += 1
+                    coefficient = 0
+                    for l in range(d-1):
+                        if coef[l] == "1":
+                            coefficient += x**((d - 1)-l)
+                    if coef[d-1] == "1":
+                        coefficient += 1
+                    poly += coefficient * (vars[j] * vars[k])
+            #PolySet.append(poly)
+                PolySet[i] = poly
+        return PolySet
+
 print "**********Generate polynomials**********"
 
 Debug = False
@@ -348,14 +381,16 @@ vars.append(1)
 for i in range(n):
 	vars.append(K.gens()[i])
 
-print "1"
-
 # PolySet = generatePolynomials(n, m, K.gens(), k)
-PolySet = genPolynomials(n + 1, m, vars, k, d, K)
-
-print "2"
+PolySet, num = genPolynomials(n + 1, m, vars, k, d, K)
 
 filename = writePolys(PolySet, m, n, False)
+
+##########################################################
+##########################################################
+########        Encoding Polynomials ASN.1      ##########
+##########################################################
+##########################################################
 
 msg   = '\nEncode polynomials (yes/no): '
 inp = getYesNo(msg)
@@ -364,7 +399,35 @@ if(inp == 0):
 
 encoder = SflashEncoder("BER")
 
-publicBin = encoder.encodePublicKey(PolySet, p, d)
+# publicBin = encoder.encodePublicKey(PolySet, n, p, d)
+publicBin = encoder.encodePublicKeyBin(PolySet, n, p, d, bin(num)[2:])
+
+file = open(filename + ".pub", "wb")
+file.write(publicBin)
+print("Public key has been store in " + file.name)
+file.close()
+
+
+##########################################################
+##########################################################
+########        Decoding Polynomials ASN.1      ##########
+##########################################################
+##########################################################
+
+decoder = SflashDecoder("BER")
+
+file = open(filename + ".pub", "rb")
+
+# publicKey = decoder.decodePublicKey(file)
+nd, pd, baseField, decodedPoly = decoder.decodePublicKey(file)
+
+polys = decodePolynomials(decodedPoly, nd + 1, len(decodedPoly) / (((nd+1)*(nd+2)*d)/2), vars, k, baseField, K)
+
+##########################################################
+##########################################################
+########        Calculate Groebner Bases        ##########
+##########################################################
+##########################################################
 
 msg   = '\nCalculate Groebner Bases (yes/no): '
 inp = getYesNo(msg)
