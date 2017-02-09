@@ -1,6 +1,6 @@
-from .sflash_record import *
-from ..mi_encoder import MIEncoder
-from ...Utils import utils
+from sflash_record import *
+from mi_encoder import MIEncoder
+from Utils import utils
 import base64
 
 header = '-----BEGIN SFLASH PRIVATE KEY BLOCK-----\n'
@@ -42,16 +42,14 @@ class SflashEncoder(MIEncoder):
 
 	def encodePublicKey(self, publicKey, p, baseField):
 		pubRecord = SflashPublicRecord()
-		system = publicKey.getSystem()
+		system = publicKey
 		n = system.parent().base_ring().ngens()
-		systemBin = self.encodeSystem(publicKey.getSystem(), 1)
-		#lst = [[2, n], [2, systemBin]]
+		systemBin = self.encodeSystem(system, baseField)
 		pubRecord.setNvars(len(system.parent().gens()))
 		pubRecord.setPrimeField(p)
 		pubRecord.setBaseField(baseField)
 		pubRecord.setPublicSystem(systemBin)
 		return self.printHeader("public") + self.printKey(base64.b64encode(pubRecord.encode(self.encoding))) + self.printFooter("public")
-		#return self.encode(lst)
 
 	'''
 	'''
