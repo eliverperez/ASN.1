@@ -180,7 +180,10 @@ def genPolynomials(n, m, vars, F, d, K):
                 # if coef[d-1] == "1":
                 #     coefficient += 1
                 # poly += coefficient * (vars[j] * vars[k])
-                poly += F.fetch_int(int(coef, 2)) * (vars[j] * vars[k])
+                if(d > 1):
+                    poly += F.fetch_int(int(coef, 2)) * (vars[j] * vars[k])
+                else:
+                    poly += int(coef,2) * (vars[j] * vars[k])
                 #PolySet.append(poly)
                 PolySet[i] = poly
     return PolySet, p

@@ -43,8 +43,6 @@ class MQEncoder(object):
 		for i in range(m):
 			polInt = self.encodeQuadraticPolynomial(system[i], d, k)
 			bin = (bin << ((n+1)*(n+2)*d)/2) | polInt
-		print "bin"
-		print bin
 		return bin
 
 	# def encodeQuadraticPolynomial(self, pol, d, k):
@@ -80,20 +78,34 @@ class MQEncoder(object):
 		n = len(vars)
 		#Constant coefficient
 		# bin = (bin << d) | polToInt(pol.constant_coefficient())
-		bin = (bin << d) | k(pol.constant_coefficient()).integer_representation()
-		#Linear coefficients
-		for i in range(n):
-		    # c = polToInt(pol.coefficient(vars[i]))
-		    # print pol.coefficient(vars[i])
-		    c = k(pol.monomial_coefficient(vars[i])).integer_representation()
-		    bin = (bin << d) | c
-		#Quadratic coefficients
-		for i in range(n):
-		    for j in range(i, n):
-		        # c = polToInt(pol.coefficient(vars[i]*vars[j]))
-		        # print pol.coefficient(vars[i]*vars[j])
-		        c = k(pol.coefficient(vars[i]*vars[j])).integer_representation()
-		        bin = (bin << d) | c
+		if(d > 1):
+			bin = (bin << d) | k(pol.constant_coefficient()).integer_representation()
+		else:
+			bin = (bin << d) + int(k(pol.constant_coefficient()))
+		if(d > 1):
+			#Linear coefficients
+			for i in range(n):
+			    # c = polToInt(pol.coefficient(vars[i]))
+			    # print pol.coefficient(vars[i])
+			    c = k(pol.monomial_coefficient(vars[i])).integer_representation()
+			    bin = (bin << d) | c
+		else:
+			#Linear coefficients
+			for i in range(n):
+			    c = pol.monomial_coefficient(vars[i])
+			    bin = (bin << d) + int(c)
+		if(d > 1):
+			#Quadratic coefficients
+			for i in range(n):
+			    for j in range(i, n):
+			        c = k(pol.coefficient(vars[i]*vars[j])).integer_representation()
+			        bin = (bin << d) | c
+		else:
+			#Quadratic coefficients
+			for i in range(n):
+			    for j in range(i, n):
+			        c = pol.coefficient(vars[i]*vars[j])
+			        bin = (bin << d) + int(c)
 		return bin
 
 	# def encodeQuadraticPolynomial(self, pol, d, k, n):

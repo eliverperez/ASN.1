@@ -23,33 +23,16 @@ class SflashDecoder(MIDecoder):
 		p = int(decoded[0][0].prettyPrint())
 		baseField = int(decoded[0][1].prettyPrint())
 		n = int(decoded[0][2].prettyPrint())
-		# Recover binary polynomials
 		self.writeFile(p, baseField, n)
-		# Declare polynomial ring over field Fp**baseField over n variables
-		# Write file with sage instructions
-		# f = open("polys.sage", "w")
-		# f.write("R.<X> = GF(" + str(p) + ")[]\n")
-		# f.write("k.<x> = GF(" + str(p) + "**" + str(baseField) + ", GF(" + str(p) + ")['X'].irreducible_element(" + str(baseField) + "))\n")
-		# f.write("K = PolynomialRing(k, \"x\", " + str(n) + ", order='deglex')")
-		# f.close()
 		load("polys.sage")
-		# Get variables in K
-		# vars = []
-		# vars.append(1)
-		# for i in range(n):
-		# 	vars.append(K.gens()[i])
-		# return vars
 		vars = self.getVars(K)
-		print vars
 		polySize = ((n+1)*(n+2)*baseField / 2)
-		# polynomials = bin(int(decoded[0][3].prettyPrint()))[2:]
 		polynomials = decoded[0][3].prettyPrint()
 		res = polySize - (len(polynomials) % polySize)
 		# Fill with zeros binary string
 		if(res != polySize):
 			for i in range(res):
 				polynomials = "0" + polynomials
-		# PolySet = genPolynomials(polynomials, n + 1, len(polynomials) / polySize, getVars(K), k, baseField, K)
 		PolySet = self.decodePolynomials(polynomials, n + 1, len(polynomials) / (((n+1)*(n+2)*baseField)/2), vars, k, baseField, K)
 		return PolySet
 
@@ -69,7 +52,6 @@ class SflashDecoder(MIDecoder):
 	        PolySet = vector(K, pol)
 	        x = F.gen()
 	        for i in range(m):
-	            # polynomial = Integer(getrandbits(binSize)).binary()
 	            polynomial = polynomials[i*binSize:(i*binSize) + binSize]
 	            z = 0
 	            poly = 0
@@ -95,74 +77,3 @@ class SflashDecoder(MIDecoder):
 		f.write("k.<x> = GF(" + str(p) + "**" + str(baseField) + ", GF(" + str(p) + ")['X'].irreducible_element(" + str(baseField) + "))\n")
 		f.write("K = PolynomialRing(k, \"x\", " + str(n) + ", order='deglex')")
 		f.close()
-
-'''	def decodePublic(self, b64Str):
-		l = len(base64Str)
-		b64Str = b64Str[len(header), l - len(footer)]
-		valueTypeLst = base64.decode(b64Str)
-		# The first element is the number of variables
-		pubRecord = SflashPublicRecord()
-		pubRecord.decode()
-		n = binToInt(valueTypeLst[0][1])
-		# Then the coded system
-		binSyst = valueTypeLst[1][1]
-		system = self.decodeSystem(n, binSyst, self.ring, 1)
-		return SflashPublicKey(system)
-
-	def decodePrivate(self, b64Str):
-		valTpLst = self.encoder.decode(ba)
-		# The first element is the random string delta
-		delta = valTpLst[0][1]
-		# Then the degree of the affine group 1 and the affine transform 1
-		m = binToInt(valTpLst[1][1])
-		affine1Bin = valTpLst[2][1]
-		# Finally the degree of the affine group 2 and the affine transform 2
-		n = binToInt(valTpLst[3][1])
-		affine2Bin = valTpLst[4][1]
-		affine1 = self.decodeAffine1(affine1Bin, m, 1)
-		affine2 = self.decodeAffine1(affine2Bin, n, 1)
-		return SflashPrivateKey(affine1, affine2, delta)'''
-
-'''	def decodePublic(self, ba):
-		valueTypeLst = self.encoder.decode(ba)
-		# The first element is the number of variables
-		n = binToInt(valueTypeLst[0][1])
-		# Then the coded system
-		binSyst = valueTypeLst[1][1]
-		system = self.decodeSystem(n, binSyst, self.ring, 1)
-		return SflashPublicKey(system)
-
-	def decodePrivate(self, ba):
-		valTpLst = self.encoder.decode(ba)
-		# The first element is the random string delta
-		delta = valTpLst[0][1]
-		# Then the degree of the affine group 1 and the affine transform 1
-		m = binToInt(valTpLst[1][1])
-		affine1Bin = valTpLst[2][1]
-		# Finally the degree of the affine group 2 and the affine transform 2
-		n = binToInt(valTpLst[3][1])
-		affine2Bin = valTpLst[4][1]
-		affine1 = self.decodeAffine1(affine1Bin, m, 1)
-		affine2 = self.decodeAffine1(affine2Bin, n, 1)
-		return SflashPrivateKey(affine1, affine2, delta)'''
-
-'''
-	def encodeAffine(self, affine):
-		deg = affine.matrix()[0,0].parent().polynomial().degree()
-		affineMatrix = affine.matrix()[0: deg, 0: deg]
-		affineVector = affine.matrix()[0:deg, deg: deg+1]
-		affineMatrixInt = 0
-		affineVectorInt = 0
-		for i in range(deg):
-			if affineVector[i] == 1:
-				affineVectorInt = affineVectorInt | 1
-			affineVectorInt << 1
-			for j in range(deg):
-				if affineMatrix[i,j] == 1:
-					affineMatrixInt = affineMatrixInt | 1
-				affineMatrixInt = affineMatrixInt << 1
-		affineVectorInt = affineVectorInt >> 1
-		affineMatrixInt = affineMatrixInt >> 1
-		return intToBin(affineMatrixInt), intToBin(affineVectorInt)
-'''
-
