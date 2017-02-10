@@ -3,7 +3,7 @@ from pyasn1.type import univ, namedtype
 import base64
 from Encoder.mi_record import MIPublicRecord
 
-base64String = "MEoCAQICAQECAQUCPwTv9DeyNuwyeFys1AT3LXjQnnVUTxwLllrrmG8P0Nyd1scKzves7QJSNV8mrdPNG39H7pXRchmWU1Gakzdi5A=="
+base64String = "MIHmAgECAgEFAgEFAoHaHGaBCeCy6PjwG0vDVfFujA3eoOfIMaWGPf1wrXPbJIfeaIcSS2266wvBjKLscR3HvMy4GnQ03L/DHXdULWjBW9ztvwRYE9Rop4c2mBwKR948U2QYNJTVzxI9JWqtj/1RBKrNMWL6+i/5ct0MeTLflOj8wCpiJJVD6Z/iueELGmC0JIobYhXPAyLswejAy8M7BrZO0ftMVrSMZ50LRDanUcoxH8kB9LEbqcmXZVvFdDajhxagOvZKSsLb1cwJZfTSo16bM7FCFY7uyGqY3zIywX9UoJIsHAbcfS8="
 
 recovered = base64.b64decode(base64String)
 

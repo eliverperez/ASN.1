@@ -1,3 +1,4 @@
+from sage.all import *
 from Utils.utils import *
 
 class MQDecoder(object):
@@ -64,6 +65,24 @@ class MQDecoder(object):
 		    c = polToInt(affineVector[i][0])
 		    bin = (bin << d) | c
 		return bin
+
+	def decodeAffine(self, affine, p, d, nDim, F):
+		affineMatrix = []
+		affineVector = []
+		z = 0
+		for i in range(nDim):
+			affineMatrix.append([])
+			for j in range(nDim):
+				polynomial = 0
+				fieldElement = affine[z * d:(z * d) + d]
+				z += 1
+				for l in range(d-1):
+					if fieldElement[l] == "1":
+						polynomial += x**((d - 1)-l)
+					if fieldElement[d-1] == "1":
+						polynomial += 1
+					affineMatrix[i].append(polynomial)
+		matrixFinish = (nDim * nDim) * d
 
 	'''
 	'''

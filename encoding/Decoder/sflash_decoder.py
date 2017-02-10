@@ -1,9 +1,13 @@
+from sage.all import *
+# from sage.rings.all import *
+# from sage.structure.all import *
+# from sage.rings.finite_rings.finite_field_constructor import *
+# # from sage.rings.finite_rings.finite_field_constructor.PolynomialRing import *
+# from sage.rings.polynomial import *
 from Encoder.sflash_record import *
 from mi_decoder import MIDecoder
 from Utils import utils
 import base64
-from sage.all import *
-from sage.rings import *
 
 header = '-----BEGIN SFLASH PRIVATE KEY BLOCK-----\n'
 footer = '\n-----END SFLASH PRIVATE KEY BLOCK-----'
@@ -19,11 +23,24 @@ class SflashDecoder(MIDecoder):
 		p = int(decoded[0][0].prettyPrint())
 		baseField = int(decoded[0][1].prettyPrint())
 		n = int(decoded[0][2].prettyPrint())
-		# Declare polynomial ring over field Fp**baseField over n variables
-		# R.<X> = GF(p)[]
-		# k.<x> = GF(p**baseField, GF(p)['X'].irreducible_element(baseField))
-		# K = PolynomialRing(k, "x", n, order='deglex')
 		# Recover binary polynomials
+		self.writeFile(p, baseField, n)
+		# Declare polynomial ring over field Fp**baseField over n variables
+		# Write file with sage instructions
+		# f = open("polys.sage", "w")
+		# f.write("R.<X> = GF(" + str(p) + ")[]\n")
+		# f.write("k.<x> = GF(" + str(p) + "**" + str(baseField) + ", GF(" + str(p) + ")['X'].irreducible_element(" + str(baseField) + "))\n")
+		# f.write("K = PolynomialRing(k, \"x\", " + str(n) + ", order='deglex')")
+		# f.close()
+		load("polys.sage")
+		# Get variables in K
+		# vars = []
+		# vars.append(1)
+		# for i in range(n):
+		# 	vars.append(K.gens()[i])
+		# return vars
+		vars = self.getVars(K)
+		print vars
 		polySize = ((n+1)*(n+2)*baseField / 2)
 		# polynomials = bin(int(decoded[0][3].prettyPrint()))[2:]
 		polynomials = decoded[0][3].prettyPrint()
@@ -33,43 +50,51 @@ class SflashDecoder(MIDecoder):
 			for i in range(res):
 				polynomials = "0" + polynomials
 		# PolySet = genPolynomials(polynomials, n + 1, len(polynomials) / polySize, getVars(K), k, baseField, K)
-		return n, p, baseField, polynomials
+		PolySet = self.decodePolynomials(polynomials, n + 1, len(polynomials) / (((n+1)*(n+2)*baseField)/2), vars, k, baseField, K)
+		return PolySet
 
 	def getVars(self, K):
 		vars = []
 		vars.append(1)
-		for i in range(n):
+		for i in range(K.ngens()):
 			vars.append(K.gens()[i])
 		return vars
 
-	def genPolynomials(self, polynomials, n, m, vars, F, d, K):
-		binSize = ((n * (n + 1)) / 2) * d
-		PolySet = []
-	    	pol = []
-	    	for i in range(m):
-	        	pol.append(0)
-	    	PolySet = vector(K, pol)
-		x = F.gen()
-		for i in range(m):
-			polynomial = Integer(getrandbits(binSize)).binary()
-			polynomial = polynomials[i*binSize:(i*binSize) + binSize]
-			z = 0
-			poly = 0
-			for j in range(n):
-				for k in xrange(j, n):
-					index = d*z
-					coef = polynomial[index:index + d]
-					z += 1
-					coefficient = 0
-					for l in range(d-1):
-						if coef[l] == "1":
-							coefficient += x**((d - 1)-l)
-					if coef[d-1] == "1":
-						coefficient += 1
-					poly += coefficient * (vars[j] * vars[k])
-			#PolySet.append(poly)
-	        	PolySet[i] = poly
-		return PolySet
+	def decodePolynomials(self, polynomials, n, m, vars, F, d, K):
+        	binSize = ((n * (n + 1)) / 2) * d
+	        PolySet = []
+	        pol = []
+	        for i in range(m):
+	            pol.append(0)
+	        PolySet = vector(K, pol)
+	        x = F.gen()
+	        for i in range(m):
+	            # polynomial = Integer(getrandbits(binSize)).binary()
+	            polynomial = polynomials[i*binSize:(i*binSize) + binSize]
+	            z = 0
+	            poly = 0
+	            for j in range(n):
+	                for k in xrange(j, n):
+	                    index = d*z
+	                    coef = polynomial[index:index + d]
+	                    z += 1
+	                    coefficient = 0
+	                    for l in range(d-1):
+	                        if coef[l] == "1":
+	                            coefficient += x**((d - 1)-l)
+	                    if coef[d-1] == "1":
+	                        coefficient += 1
+	                    poly += coefficient * (vars[j] * vars[k])
+	            #PolySet.append(poly)
+	                PolySet[i] = poly
+	        return PolySet
+
+	def writeFile(self, p, baseField, n):
+		f = open("polys.sage", "w")
+		f.write("R.<X> = GF(" + str(p) + ")[]\n")
+		f.write("k.<x> = GF(" + str(p) + "**" + str(baseField) + ", GF(" + str(p) + ")['X'].irreducible_element(" + str(baseField) + "))\n")
+		f.write("K = PolynomialRing(k, \"x\", " + str(n) + ", order='deglex')")
+		f.close()
 
 '''	def decodePublic(self, b64Str):
 		l = len(base64Str)

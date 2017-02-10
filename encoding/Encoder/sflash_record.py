@@ -5,14 +5,26 @@ class SflashPublicRecord(MIPublicRecord):
 		return None
 
 class SflashPrivateRecord(Record):
-	componentType = namedtype.NamedTypes(namedtype.NamedType('ndim', univ.Integer()),
-		namedtype.NamedType('affine1', univ.Integer()),
+	componentType = namedtype.NamedTypes(namedtype.OptionalNamedType('primeField', univ.Integer()),
+		namedtype.OptionalNamedType('baseField', univ.Integer()),
+		namedtype.OptionalNamedType('extensionField', univ.Integer()),
+		namedtype.OptionalNamedType('theta', univ.Integer()),
 		namedtype.NamedType('mdim', univ.Integer()),
-		namedtype.NamedType('affine2', univ.Integer()),
-		namedtype.NamedType('delta', univ.OctetString()))
-	
-	def setDelta(self, delta):
-		self.setComponentByName('delta', delta)
+		namedtype.NamedType('affine1', univ.Integer()),
+		namedtype.NamedType('ndim', univ.Integer()),
+		namedtype.NamedType('affine2', univ.Integer()))
+
+	def setPrimeField(self, p):
+		self.setComponentByName('primeField', p)
+
+	def setBaseField(self, baseField):
+		self.setComponentByName('baseField', baseField)
+
+	def setExtensionField(self, extField):
+		self.setComponentByName('extensionField', extField)
+
+	def setTheta(self, theta):
+		self.setComponentByName('theta', theta)
 
 	def setNdim(self, n):
 		self.setComponentByName('ndim', n)

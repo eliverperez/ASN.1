@@ -8,35 +8,6 @@ class MQEncoder(object):
 	def __init__(self, encoding):
 		self.encoding =  encoding
 
-	''' Encoded public key contains:
-		BaseField: Binary array representing the irreducible polynomial over F2 (0-1 coefficients)
-		Extension Field: Binary array representing (0-1 coefficinets)
-		Coefficient Matrix: A big integer with coefficient size defined by the polynomial of the base field
-	'''
-
-	'''
-	def encodePublic(self, publicKey):
-		system = publicKey.getSystem()
-		system[0].
-		deg = baseField.polynomial().degree()
-		systemBin = self.encodePublicSystem(system, deg)
-		lst = [[2, basePolyBin], [2, extPolyBin], [2, systemBin]]
-		return self.encoder.encode(lst)
-
-	def encodePrivate(self, privateKey):
-		baseField = privateKey.getBaseField()
-		extField = privateKey.getExtensionField()
-		basePolyBin, extPolyBin = encodeFields(baseField, extField)
-		thetaBin = intToBin(privateKey.getTheta()
-		affine1 = privateKey.getAffine1()
-		deg = baseField.polynomial().degree()
-		affine1Bin = self.encodeAffine(privateKey.getAffine1(), deg)
-		affine2Bin = self.encodeAffine(privateKey.getAffine2(), deg)
-		lst = [[2, basePolyBin], [2, extPolyBin], [2, n], [2, affine1Bin], [2, affine1Bin]]
-		return self.encoder.encode(lst)'''
-
-	'''
-	'''
 	def encodeField(self, field):
 		return self.encodeBinPolynomial(field.polynomial())
 	
@@ -44,8 +15,6 @@ class MQEncoder(object):
 	def encodeBinPol(self, pol):
 		return int(field.polynomial())
 
-	'''
-	'''
 	def encodeAffine(self, affine, d = 0):
 		baseField = affine.matrix()[0,0].parent()
 		n = affine.parent().degree()
@@ -65,42 +34,85 @@ class MQEncoder(object):
 		    bin = (bin << d) | c
 		return bin
 
-	'''
-	'''
-	def encodeSystem(self, system, d):
+	def encodeSystem(self, system, d, k):
 		bin = 0
 		m = len(system)
 		n = len(system[0].parent().gens())
 		if d == 0:
 			d = system[0].parent().base_ring().degree()
 		for i in range(m):
-			polInt = self.encodeQuadraticPolynomial(system[i], d)
+			polInt = self.encodeQuadraticPolynomial(system[i], d, k)
 			bin = (bin << ((n+1)*(n+2)*d)/2) | polInt
+		print "bin"
+		print bin
 		return bin
-		#return intToBin(bin, int(((n+1)*(n+2)*d*m)/16))
 
-	'''
-	'''
-	def encodeQuadraticPolynomial(self, pol, d):
+	# def encodeQuadraticPolynomial(self, pol, d, k):
+	# 	bin = 0
+	# 	vars = pol.parent().gens()
+	# 	if d == 0:
+	# 		d = pol.parent().base_ring().degree()
+	# 	n = len(vars)
+	# 	#Quadratic coefficients
+	# 	for i in range(n):
+	# 	    for j in range(i, n):
+	# 	        # c = polToInt(pol.coefficient(vars[i]*vars[j]))
+	# 	        print pol.coefficient(vars[i]*vars[j])
+	# 	        c = k(pol.coefficient(vars[i]*vars[j])).integer_representation()
+	# 	        bin = (bin << d) | c
+	# 	        pol = pol - c*vars[i]*vars[j]
+	# 	#Linear coefficients
+	# 	for i in range(n):
+	# 	    # c = polToInt(pol.coefficient(vars[i]))
+	# 	    print pol.coefficient(vars[i])
+	# 	    c = k(pol.coefficient(vars[i])).integer_representation()
+	# 	    bin = (bin << d) | c
+	# 	#Constant coefficient
+	# 	# bin = (bin << d) | polToInt(pol.constant_coefficient())
+	# 	bin = (bin << d) | k(pol.constant_coefficient()).integer_representation()
+	# 	return bin
+
+	def encodeQuadraticPolynomial(self, pol, d, k):
 		bin = 0
 		vars = pol.parent().gens()
 		if d == 0:
 			d = pol.parent().base_ring().degree()
 		n = len(vars)
+		#Constant coefficient
+		# bin = (bin << d) | polToInt(pol.constant_coefficient())
+		bin = (bin << d) | k(pol.constant_coefficient()).integer_representation()
+		#Linear coefficients
+		for i in range(n):
+		    # c = polToInt(pol.coefficient(vars[i]))
+		    # print pol.coefficient(vars[i])
+		    c = k(pol.monomial_coefficient(vars[i])).integer_representation()
+		    bin = (bin << d) | c
 		#Quadratic coefficients
 		for i in range(n):
 		    for j in range(i, n):
-		        c = polToInt(pol.coefficient(vars[i]*vars[j]))
+		        # c = polToInt(pol.coefficient(vars[i]*vars[j]))
+		        # print pol.coefficient(vars[i]*vars[j])
+		        c = k(pol.coefficient(vars[i]*vars[j])).integer_representation()
 		        bin = (bin << d) | c
-		        pol = pol - c*vars[i]*vars[j]
-		#Linear coefficients
-		for i in range(n):
-		    c = polToInt(pol.coefficient(vars[i]))
-		    bin = (bin << d) | c
-		#Constant coefficient
-		bin = (bin << d) | polToInt(pol.constant_coefficient())
 		return bin
-	
+
+	# def encodeQuadraticPolynomial(self, pol, d, k, n):
+	# 	bin = 0
+	# 	if d == 0:
+	# 		d = pol.parent().base_ring().degree()
+	# 	coefficients = pol.coefficients()
+	# 	quadraticpolynomials = (n * (n + 1)) / 2
+	# 	totalpolynomials = ((n + 1) * (n + 2)) / 2
+	# 	print totalpolynomials
+	# 	bin = (bin << d) | coefficients[totalpolynomials - 1].integer_representation()
+	# 	#Linear coefficients
+	# 	for i in xrange(quadraticpolynomials + 1, totalpolynomials - 1):
+	# 		bin = (bin << d) | coefficients[i].integer_representation()
+	# 	#Quadratic coefficients
+	# 	for i in range(quadraticpolynomials):
+	# 	    bin = (bin << d) | coefficients[i].integer_representation()
+	# 	return bin
+
 	def decodeBinPol(self, ba, x):
 		if type(bin) == bytearray:
 			bin = binToInt(bin)

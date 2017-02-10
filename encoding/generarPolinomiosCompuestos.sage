@@ -152,37 +152,38 @@ def generatePolynomials(n, m, vars, F):
     return PolySet
 
 def genPolynomials(n, m, vars, F, d, K):
-	binSize = ((n * (n + 1) * d) / 2)
-    	p = 0
-	PolySet = []
-    	pol = []
-    	for i in range(m):
-        	pol.append(0)
-    	PolySet = vector(K, pol)
-	x = F.gen()
-	for i in range(m):
-            	polynomialInt = Integer(getrandbits(binSize))
-		polynomial = polynomialInt.binary()
-        	p = (p << binSize) | polynomialInt
-		if(len(polynomial) < binSize):
-			polynomial = fillZeros(polynomial, binSize)
-		z = 0
-		poly = 0
-		for j in range(n):
-			for k in xrange(j, n):
-				index = d*z
-				coef = polynomial[index:index + d]
-				z += 1
-				coefficient = 0
-				for l in range(d-1):
-					if coef[l] == "1":
-						coefficient += x**((d - 1)-l)
-				if coef[d-1] == "1":
-					coefficient += 1
-				poly += coefficient * (vars[j] * vars[k])
-		#PolySet.append(poly)
-        	PolySet[i] = poly
-	return PolySet, p
+    binSize = ((n * (n + 1) * d) / 2)
+    p = 0
+    PolySet = []
+    pol = []
+    for i in range(m):
+        pol.append(0)
+    PolySet = vector(K, pol)
+    x = F.gen()
+    for i in range(m):
+        polynomialInt = Integer(getrandbits(binSize))
+        polynomial = polynomialInt.binary()
+        p = (p << binSize) | polynomialInt
+        if(len(polynomial) < binSize):
+            polynomial = fillZeros(polynomial, binSize)
+        z = 0
+        poly = 0
+        for j in range(n):
+            for k in xrange(j, n):
+                index = d*z
+                coef = polynomial[index:index + d]
+                z += 1
+                # coefficient = 0
+                # for l in range(d-1):
+                #     if coef[l] == "1":
+                #         coefficient += x**((d - 1)-l)
+                # if coef[d-1] == "1":
+                #     coefficient += 1
+                # poly += coefficient * (vars[j] * vars[k])
+                poly += F.fetch_int(int(coef, 2)) * (vars[j] * vars[k])
+                #PolySet.append(poly)
+                PolySet[i] = poly
+    return PolySet, p
 
 
 def writePolynomialsSageFormat(polynomials):
@@ -399,14 +400,25 @@ if(inp == 0):
 
 encoder = SflashEncoder("BER")
 
-# publicBin = encoder.encodePublicKey(PolySet, n, p, d)
-publicBin = encoder.encodePublicKeyBin(PolySet, n, p, d, bin(num)[2:])
+publicBin = encoder.encodePublicKey(PolySet, n, p, d)
+# publicBin = encoder.encodePublicKey(PolySet, n, p, d, bin(num)[2:])
 
 file = open(filename + ".pub", "wb")
 file.write(publicBin)
 print("Public key has been store in " + file.name)
 file.close()
 
+# AG = AffineGroup(n, k)
+# affine1 = AG.random_element()
+# affine2 = AG.random_element()
+# theta = 11
+
+# privateBin = encoder.encodePrivateKey(affine1, affine2, p, d, theta)
+
+# file = open(filename + ".priv", "wb")
+# file.write(privateBin)
+# print("Public key has been store in " + file.name)
+# file.close()
 
 ##########################################################
 ##########################################################
@@ -419,9 +431,18 @@ decoder = SflashDecoder("BER")
 file = open(filename + ".pub", "rb")
 
 # publicKey = decoder.decodePublicKey(file)
-nd, pd, baseField, decodedPoly = decoder.decodePublicKey(file)
+# nd, pd, baseField, decodedPoly = decoder.decodePublicKey(file)
+polys = decoder.decodePublicKey(file)
 
-polys = decodePolynomials(decodedPoly, nd + 1, len(decodedPoly) / (((nd+1)*(nd+2)*d)/2), vars, k, baseField, K)
+file.close()
+
+# file = open(filename + ".priv", "rb")
+
+# affine1Decoded, affine2Decoded, pDecoded, dDecoded, thetaDecoded = decoder.decodePrivateKey(file)
+
+# file.close()
+
+# polys = decodePolynomials(decodedPoly, nd + 1, len(decodedPoly) / (((nd+1)*(nd+2)*d)/2), vars, k, baseField, K)
 
 ##########################################################
 ##########################################################
