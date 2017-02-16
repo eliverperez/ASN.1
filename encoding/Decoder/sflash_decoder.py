@@ -27,7 +27,7 @@ class SflashDecoder(MIDecoder):
 		load("polys.sage")
 		vars = self.getVars(K)
 		polySize = ((n+1)*(n+2)*baseField / 2)
-		polynomials = decoded[0][3].prettyPrint()
+		polynomials = bin(int(decoded[0][3].prettyPrint(), 10))[2:]
 		res = polySize - (len(polynomials) % polySize)
 		# Fill with zeros binary string
 		if(res != polySize):

@@ -74,7 +74,7 @@ class SflashEncoder(MIEncoder):
 		# pubRecord.setNvars(n)
 		pubRecord.setPrimeField(p)
 		pubRecord.setBaseField(baseField)
-		pubRecord.setPublicSystem(systemBin)
+		pubRecord.setPublicSystem(int(systemBin, 2))
 		return self.printHeader("public") + self.printKey(base64.b64encode(pubRecord.encode(self.encoding))) + self.printFooter("public")
 
 	def genPolynomials(self, n, m, vars, F, d, K):
