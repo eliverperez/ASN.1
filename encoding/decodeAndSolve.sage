@@ -8,6 +8,7 @@ from brial.parallel import groebner_basis_first_finished
 from Encoder.sflash_encoder import SflashEncoder
 from Decoder.sflash_decoder import SflashDecoder
 from Utils.asn1 import ASN1
+import resource
 
 #Biblioteca para generar numeros enteros aleatorios
 from random import randint
@@ -420,7 +421,9 @@ print "maxNV = " + str(maxNV)
 ####### algebraic variety
 startTime = time.time()
 # gb = groebner_basis( polynomials )
+startProcMem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 gb = groebner_basis_first_finished( polynomials, {'heuristic':False}, {'heuristic': True} )
+finishProcMem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 endTime = time.time()
 timeTaken = endTime - startTime
 
@@ -529,3 +532,7 @@ else:
 print "\nVector de resultados de la evaluacion\n"
 
 print evaluation
+
+procMemUsed = finishProcMem - startProcMem
+print "Memoria utilizada: " + str(procMemUsed)
+print "\nPSUTIL:" + str(mem)

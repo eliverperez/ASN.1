@@ -1,0 +1,28 @@
+set terminal latex font "Helvetica,30"
+set output "memoria.tex"
+set size 0.7,0.7
+set key left
+set grid y
+set xrange [­0:24]
+set ylabel "Mem (MB)"
+set xlabel "No. Variables"
+plot 'memoria.txt' with lines
+
+
+set terminal png size 800,600 enhanced font "Helvetica,14"
+set output 'memoria.png'
+set grid y
+set key off
+set xrange [­0:24]
+set ylabel "Memory (MB)"
+set xlabel "No. Variables"
+plot 'memoria.txt' with lines
+
+
+set xtics font "Times-Roman, 12"
+set ytics font "Times-Roman, 12"
+set grid y
+set xrange[2:24]
+set ylabel "Memory (MB)" font "Times-Roman, 12"
+set xlabel "No. Variables" font "Times-Roman, 12"
+plot 'memoria.txt' with lines title "memory usage"
