@@ -3,7 +3,7 @@ from pyasn1.type import univ, namedtype
 import base64
 from Encoder.mi_record import MIPublicRecord
 
-base64String = "MBMCAQICAQECAQUCCHCA0s7+ecjz"
+base64String = "MBsCAQICAQECAQsCAQUCBDrKjhACAQUCBDqWhfg="
 
 recovered = base64.b64decode(base64String)
 
@@ -15,8 +15,6 @@ n = int(decoded[0][2].prettyPrint())
 polySize = ((n+1)*(n+2)*baseField / 2)
 polynomials = Integer(decoded[0][3].prettyPrint()).binary()
 
-print polynomials
-
 res = polySize - (len(polynomials) % polySize)
 
 if(res != polySize):
@@ -25,4 +23,4 @@ if(res != polySize):
 
 print "\n\n"
 
-print polynomials
+print decoded

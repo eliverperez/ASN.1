@@ -1,0 +1,22 @@
+Computed Groebner Basis:
+x(14) + x(15) + 1
+x(13) + x(15) + 1
+x(11)*x(15) + x(15)
+x(9) + x(15)
+x(8) + x(11)
+x(7) + x(11) + x(15)
+x(6) + x(11)
+x(5) + x(11) + 1
+x(4) + x(11) + 1
+x(3) + x(11) + x(15)
+x(2) + x(15) + 1
+x(0) + x(11) + x(15)
+x(1) + 1
+x(10)
+x(12)
+
+Number of input equations:  	16
+Total number of variables:  	16
+Elapsed time:       	 secs.9.69516801834
+Field characteristic: 		2
+Field degree: 			1

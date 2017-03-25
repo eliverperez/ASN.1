@@ -1,3 +1,4 @@
+from sage.all 	  import *
 from brial        import *
 from brial        import Block, declare_ring
 from brial        import Polynomial
@@ -7,6 +8,7 @@ from brial.gbcore import groebner_basis
 from Encoder.sflash_encoder import SflashEncoder
 from Decoder.sflash_decoder import SflashDecoder
 from Utils.asn1 import ASN1
+import resource
 
 #Biblioteca para generar numeros enteros aleatorios
 from random import randint
@@ -19,6 +21,8 @@ import datetime
 
 #Biblioteca para medir tiempo de ejecucion
 import time
+
+# startProcMem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 
 ###################################################
 #                    Functions                    #
@@ -345,6 +349,7 @@ def decodePolynomials(polynomials, n, m, vars, F, d, K):
 print "**********Generate polynomials**********"
 
 Debug = False
+mem = psutil.virtual_memory()
 
 msg   = '\nNumber of variables to use: '
 RC, n = getInteger(msg)
@@ -366,8 +371,10 @@ RC, d = getInteger(msg)
 if(RC != 0):
 	sys.exit(1)
 
-R.<X> = GF(p)[]
-k.<x> = GF(p**d, GF(p)['X'].irreducible_element(d))
+# R.<X> = GF(p)[]
+r = PolynomialRing(GF(p), 'X')
+k = GF(p**d, 'x', GF(p)['X'].irreducible_element(d))
+# k.<x> = GF(p**d, GF(p)['X'].irreducible_element(d))
 K = PolynomialRing(k, "x", n, order='deglex')
 
 #Vector para la codificacion de los polinomios
@@ -411,17 +418,17 @@ file.write(publicBin)
 print("Public key has been store in " + file.name)
 file.close()
 
-# AG = AffineGroup(n, k)
-# affine1 = AG.random_element()
-# affine2 = AG.random_element()
-# theta = 11
+AG = AffineGroup(n, k)
+affine1 = AG.random_element()
+affine2 = AG.random_element()
+theta = 11
 
-# privateBin = encoder.encodePrivateKey(affine1, affine2, p, d, theta)
+privateBin = encoder.encodePrivateKey(affine1, affine2, p, d, theta)
 
-# file = open(filename + ".priv", "wb")
-# file.write(privateBin)
-# print("Public key has been store in " + file.name)
-# file.close()
+file = open(filename + ".priv", "wb")
+file.write(privateBin)
+print("Private key has been store in " + file.name)
+file.close()
 
 ##########################################################
 ##########################################################
@@ -439,11 +446,11 @@ polys = decoder.decodePublicKey(file)
 
 file.close()
 
-# file = open(filename + ".priv", "rb")
+file = open(filename + ".priv", "rb")
 
-# affine1Decoded, affine2Decoded, pDecoded, dDecoded, thetaDecoded = decoder.decodePrivateKey(file)
+nPriv, SPriv, sPriv, mPriv, TPriv, tPriv, pPriv, baseFieldPriv, thetaPriv = decoder.decodePrivateKey(file)
 
-# file.close()
+file.close()
 
 # polys = decodePolynomials(decodedPoly, nd + 1, len(decodedPoly) / (((nd+1)*(nd+2)*d)/2), vars, k, baseField, K)
 
@@ -458,15 +465,15 @@ inp = getYesNo(msg)
 if(inp == 0):
 	sys.exit(0)
 
-Q = generateQPolynomials(PolySet, k, m)
+# Q = generateQPolynomials(PolySet, k, m)
 
-q_filename = writePolys(Q, m, n, True)
+# q_filename = writePolys(Q, m, n, True)
 
 polyfile = open(filename, "r")
-q_file = open(q_filename, "r")
+# q_file = open(q_filename, "r")
 
 groebner_basis_file = open(filename + "_GroebnerBasisOutput", "w")
-q_groebner_basis_file = open(q_filename + "_GroebnerBasisOutput", "w")
+# q_groebner_basis_file = open(q_filename + "_GroebnerBasisOutput", "w")
 
 ###################################################
 #                     Main code                   #
@@ -485,7 +492,10 @@ print "maxNV = " + str(maxNV)
 ####### Computes Groebner Basis for a set of polynomials equal to an
 ####### algebraic variety
 startTime = time.time()
+startProcMem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 gb = groebner_basis( polynomials )
+# gb = groebner_basis_first_finished( polynomials, {'heuristic':False}, {'heuristic': True} )
+finishProcMem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
 endTime = time.time()
 timeTaken = endTime - startTime
 
@@ -501,7 +511,10 @@ print "Elapsed time:       {0} secs.".format(timeTaken)
 print "Field characteristic: \t", p
 print "Field degree: \t", d
 
-groebner_basis_file.write("Computed Groebner Basis:\n" + str(gb))
+# groebner_basis_file.write("Computed Groebner Basis:\n" + str(gb))
+groebner_basis_file.write("Computed Groebner Basis:\n")
+for i in range(len(gb)):
+    groebner_basis_file.write(str(gb[i]) + "\n")
 groebner_basis_file.write("\nNumber of input equations:  \t" + format( len(PK) ))
 groebner_basis_file.write("\nTotal number of variables:  \t" + format( maxNV ))
 # groebner_basis_file.write("\nNumber of loops made:       \t" + format( k ))
@@ -519,6 +532,9 @@ groebner_basis_file.close()
 # fpIn.close()
 # fpOut.close()
 polyfile.close()
+
+if(len(gb) == 1 and gb[0] == 1):
+	sys.exit(0)
 
 ###################################################
 #  Find values of variables using Groebner Basis  #
@@ -596,123 +612,123 @@ print evaluation
 
 
 
-###################################################
-#                     Main code                   #
-###################################################
-PK, maxNV = readPK(q_file)                    # Convert file to PolyBoRi format
-maxNV    += 1                               # Not an index but a quantity
-writePolyForPolyBoRi(PK, maxNV, "forPB_Q.py")    # Generate file for Groebner Basis
-# data = load_file("forPB")                   # Import file to use in GB
-data = load("forPB_Q.py")                   # Import file to use in GB
+# ###################################################
+# #                     Main code                   #
+# ###################################################
+# PK, maxNV = readPK(q_file)                    # Convert file to PolyBoRi format
+# maxNV    += 1                               # Not an index but a quantity
+# writePolyForPolyBoRi(PK, maxNV, "forPB_Q.py")    # Generate file for Groebner Basis
+# # data = load_file("forPB")                   # Import file to use in GB
+# data = load("forPB_Q.py")                   # Import file to use in GB
 
-polynomials = ideal
+# polynomials = ideal
 
-####### Computes Groebner Basis for a set of polynomials equal to an
-####### algebraic variety
-startTime = time.time()
-gb = groebner_basis( polynomials )
-endTime = time.time()
-timeTaken = endTime - startTime
+# ####### Computes Groebner Basis for a set of polynomials equal to an
+# ####### algebraic variety
+# startTime = time.time()
+# gb = groebner_basis( polynomials )
+# endTime = time.time()
+# timeTaken = endTime - startTime
 
-print "\nQ-Computed Groebner Basis:\n"
-print gb
+# print "\nQ-Computed Groebner Basis:\n"
+# print gb
 
-print "\nNumber of input equations:  {0}".format( len(PK) )
-print "Total number of variables:  {0}".format( maxNV )
-print "Number of output equations: {0}".format( len(gb) )
-print "Elapsed time:       {0} secs.".format(timeTaken)
-print "Field characteristic: \t", p
-print "Field degree: \t", d
+# print "\nNumber of input equations:  {0}".format( len(PK) )
+# print "Total number of variables:  {0}".format( maxNV )
+# print "Number of output equations: {0}".format( len(gb) )
+# print "Elapsed time:       {0} secs.".format(timeTaken)
+# print "Field characteristic: \t", p
+# print "Field degree: \t", d
 
-q_groebner_basis_file.write("Computed Groebner Basis:\n" + str(gb))
-q_groebner_basis_file.write("\nNumber of input equations:  \t" + format( len(PK) ))
-q_groebner_basis_file.write("\nTotal number of variables:  \t" + format( maxNV ))
-q_groebner_basis_file.write("\nElapsed time:       \t secs." + format(timeTaken))
-q_groebner_basis_file.write("\nField characteristic: \t\t" + str(p))
-q_groebner_basis_file.write("\nField degree: \t\t\t" + str(d))
+# q_groebner_basis_file.write("Computed Groebner Basis:\n" + str(gb))
+# q_groebner_basis_file.write("\nNumber of input equations:  \t" + format( len(PK) ))
+# q_groebner_basis_file.write("\nTotal number of variables:  \t" + format( maxNV ))
+# q_groebner_basis_file.write("\nElapsed time:       \t secs." + format(timeTaken))
+# q_groebner_basis_file.write("\nField characteristic: \t\t" + str(p))
+# q_groebner_basis_file.write("\nField degree: \t\t\t" + str(d))
 
-q_groebner_basis_file.close()
+# q_groebner_basis_file.close()
 
-# for i in range(len(times)):
-#     print "Time taken GB "+str(i+1)+": " + str(times[i])
+# # for i in range(len(times)):
+# #     print "Time taken GB "+str(i+1)+": " + str(times[i])
 
-# writePoly(gb, fpOut, len(PK), maxNV, k, acumm/k)
+# # writePoly(gb, fpOut, len(PK), maxNV, k, acumm/k)
 
-# fpIn.close()
-# fpOut.close()
-q_file.close()
+# # fpIn.close()
+# # fpOut.close()
+# q_file.close()
 
-###################################################
-#  Find values of variables using Groebner Basis  #
-###################################################
-print "\nFinding values of variables using the Groebner Basis"
+# ###################################################
+# #  Find values of variables using Groebner Basis  #
+# ###################################################
+# print "\nFinding values of variables using the Groebner Basis"
 
-declare_ring([Block("x", maxNV, reverse=False)])
-listVars   = iniVarsAssig(maxNV)    # Initialize list holding values of assigned variables
-listMDge1  = []             # List to store monomials with degree greater than 1
+# declare_ring([Block("x", maxNV, reverse=False)])
+# listVars   = iniVarsAssig(maxNV)    # Initialize list holding values of assigned variables
+# listMDge1  = []             # List to store monomials with degree greater than 1
 
-for i in range( len(gb) ):
-    poly = gb[i]            # Read forward each polynomial in Groebner Basis file
-    if (Debug): print "\n{0}. Working with:\n{1}".format(i,poly)
+# for i in range( len(gb) ):
+#     poly = gb[i]            # Read forward each polynomial in Groebner Basis file
+#     if (Debug): print "\n{0}. Working with:\n{1}".format(i,poly)
 
-    poly = subsVarsAssig(poly, listVars)    # Evaluate "poly" in already found variables
+#     poly = subsVarsAssig(poly, listVars)    # Evaluate "poly" in already found variables
 
-    if (Debug): print "Variables already found:",listVars
-    if (Debug): print "Poly after substituting current variables:\n{0}".format(poly)
+#     if (Debug): print "Variables already found:",listVars
+#     if (Debug): print "Poly after substituting current variables:\n{0}".format(poly)
 
-    while ( True ):                             # If there are monomials with deg>=1 do:
-        listMDge1    = getLstMonsDge1(poly) # Get monomials to use in this cycle
-        if ( len(listMDge1) > 0 ):              # If there are monomials left:
-            var = getFstVarMon( listMDge1[0] )  # Get first variable of monomial with deg>1
-        else:
-            break
-        if (Debug): print "Variable to assign value: {0}.".format(var),
-        status = endOfPoly(poly)
-        if   ( status == 0 ):   # Several monomials in poly, still pending
-            addVarAssig(listVars, var.index(), 0)
-            if (Debug): print "Assigned value:",0
-            poly = subsVarsAssig(poly, listVars)
-            continue
-        elif ( status == 1 ):   # All terms in "poly" evaluated to cero
-            break               # so, continue with next polynomial
-        elif ( status == 2 ):   # Just one variable left, set it as zero and next poly
-            addVarAssig(listVars, var.index(), 0)
-            if (Debug): print "Assigned value:",0
-            break
-        elif ( status == 3 ):   # Just one variable left plus a constant,
-            addVarAssig(listVars, var.index(), 1)   # so, set it as one and next poly
-            if (Debug): print "Assigned value:",1
-            break
-        else:                   # status = 4, INCONSISTENCY!!!
-            if (Debug): print "Inconsistency in polynomial {0}. 1 = 0!!!".format(i)
-            break
+#     while ( True ):                             # If there are monomials with deg>=1 do:
+#         listMDge1    = getLstMonsDge1(poly) # Get monomials to use in this cycle
+#         if ( len(listMDge1) > 0 ):              # If there are monomials left:
+#             var = getFstVarMon( listMDge1[0] )  # Get first variable of monomial with deg>1
+#         else:
+#             break
+#         if (Debug): print "Variable to assign value: {0}.".format(var),
+#         status = endOfPoly(poly)
+#         if   ( status == 0 ):   # Several monomials in poly, still pending
+#             addVarAssig(listVars, var.index(), 0)
+#             if (Debug): print "Assigned value:",0
+#             poly = subsVarsAssig(poly, listVars)
+#             continue
+#         elif ( status == 1 ):   # All terms in "poly" evaluated to cero
+#             break               # so, continue with next polynomial
+#         elif ( status == 2 ):   # Just one variable left, set it as zero and next poly
+#             addVarAssig(listVars, var.index(), 0)
+#             if (Debug): print "Assigned value:",0
+#             break
+#         elif ( status == 3 ):   # Just one variable left plus a constant,
+#             addVarAssig(listVars, var.index(), 1)   # so, set it as one and next poly
+#             if (Debug): print "Assigned value:",1
+#             break
+#         else:                   # status = 4, INCONSISTENCY!!!
+#             if (Debug): print "Inconsistency in polynomial {0}. 1 = 0!!!".format(i)
+#             break
 
-print "Variables found:"
-for i in range( len(listVars) ):
-    if ( listVars[i] != -1 ):
-        print "x({0}) = {1}".format( i, listVars[i] )
+# print "Variables found:"
+# for i in range( len(listVars) ):
+#     if ( listVars[i] != -1 ):
+#         print "x({0}) = {1}".format( i, listVars[i] )
 
-writeEvaluationFile(polynomials, listVars)
+# writeEvaluationFile(polynomials, listVars)
 
-evaluation = []
+# evaluation = []
 
-load("evaluation.py")
+# load("evaluation.py")
 
-evaluationResult = True
+# evaluationResult = True
 
-for i in range(len(evaluation)):
-    if(evaluation[i] != 0):
-        evaluationResult = False
-        break
+# for i in range(len(evaluation)):
+#     if(evaluation[i] != 0):
+#         evaluationResult = False
+#         break
 
-if(evaluationResult):
-    print "\nBases de groebner correctas\n"
-else:
-    print "\nResultados incorrectos\n"
+# if(evaluationResult):
+#     print "\nBases de groebner correctas\n"
+# else:
+#     print "\nResultados incorrectos\n"
 
-print "\nVector de resultados de la evaluacion\n"
+# print "\nVector de resultados de la evaluacion\n"
 
-print evaluation
+# print evaluation
 
 
 
@@ -728,4 +744,7 @@ print evaluation
 
 # nu = randint(0, 2^(m*m))
 
-
+# finishProcMem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+procMemUsed = finishProcMem - startProcMem
+print "Memoria utilizada: " + str(procMemUsed)
+print "\nPSUTIL:" + str(mem)

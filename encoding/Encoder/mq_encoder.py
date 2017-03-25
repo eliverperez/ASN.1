@@ -25,13 +25,19 @@ class MQEncoder(object):
 		bin = 0
 		#Matrix elements
 		for i in range(n):
-		    for j in range(n):
-		        c = polToInt(affineMatrix[i,j])
-		        bin = (bin << d) | c
+			for j in range(n):
+				if(d > 1):
+					c = affineMatrix[i,j].integer_representation()
+				else:
+					c = polToInt(affineMatrix[i,j])
+				bin = (bin << d) | c
 		#Vector elements
 		for i in range(n):
-		    c = polToInt(affineVector[i][0])
-		    bin = (bin << d) | c
+			if(d > 1):
+				c = affineVector[i][0].integer_representation()
+			else:
+				c = polToInt(affineVector[i][0])
+			bin = (bin << d) | c
 		return bin
 
 	def encodeSystem(self, system, d, k):

@@ -77,3 +77,51 @@ class SflashDecoder(MIDecoder):
 		f.write("k.<x> = GF(" + str(p) + "**" + str(baseField) + ", GF(" + str(p) + ")['X'].irreducible_element(" + str(baseField) + "))\n")
 		f.write("K = PolynomialRing(k, \"x\", " + str(n) + ", order='deglex')")
 		f.close()
+
+	def generateAffine(self, affine, n, p, baseField, k):
+		S = []
+		s = []
+		z = 0
+		for i in range(n):
+			S.append([])
+			for j in range(n):
+				index = z*baseField
+				z += 1
+				poly = int(affine[index:index + baseField], 2)
+				if(baseField > 1):
+					S[i].append(k.fetch_int(poly))
+				else:
+					S[i].append(poly)
+		for i in range(n):
+			index = z*baseField
+			z += 1
+			poly = int(affine[index:index + baseField], 2)
+			if(baseField > 1):
+				s.append(k.fetch_int(poly))
+			else:
+				s.append(poly)
+		return S, s
+
+	def fillZeros(self, p, size):
+		dif = size - len(p)
+		for i in range(dif):
+			p = "0" + p
+		return p
+
+	def decodePrivateKey(self, file):
+		privRecord = SflashPrivateRecord()
+		encoded = ""
+		lines = file.readlines()
+		for i in xrange(1, len(lines) - 1):
+			encoded += lines[i]
+		decoded = privRecord.decode(self.encoding, base64.b64decode(encoded))
+		p = int(decoded[0][0].prettyPrint())
+		baseField = int(decoded[0][1].prettyPrint())
+		theta = int(decoded[0][2].prettyPrint())
+		n = int(decoded[0][3].prettyPrint())
+		self.writeFile(p, baseField, n)
+		load("polys.sage")
+		S, s = self.generateAffine(self.fillZeros(bin(int(decoded[0][4].prettyPrint()))[2:], ((n*n) + n) * baseField), n, p, baseField, k)
+		m = int(decoded[0][5].prettyPrint())
+		T, t = self.generateAffine(self.fillZeros(bin(int(decoded[0][6].prettyPrint()))[2:], ((m*m) + m) * baseField), n, p, baseField, k)
+		return n, S, s, m, T, t, p, baseField, theta
