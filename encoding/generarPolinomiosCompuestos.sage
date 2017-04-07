@@ -372,7 +372,6 @@ def writePrivateKey(filename, n, m, theta, p, k, ext, K):
     file.close()
 
 
-
 print "**********Generate polynomials**********"
 
 Debug = False
