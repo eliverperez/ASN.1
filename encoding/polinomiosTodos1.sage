@@ -167,7 +167,7 @@ def genPolynomials(n, m, vars, F, d, K):
     for i in range(m):
         polynomialInt = Integer(getrandbits(binSize))
         polynomial = polynomialInt.binary()
-        p = (p << binSize) | polynomialInt
+        # p = (p << binSize) | polynomialInt
         if(len(polynomial) < binSize):
             polynomial = fillOnes(polynomial, binSize)
         z = 0
@@ -176,7 +176,7 @@ def genPolynomials(n, m, vars, F, d, K):
             for k in xrange(j, n):
                 index = d*z
                 # coef = polynomial[index:index + d]
-                coef = "1"
+                coef = str((F.order() - 1).binary())
                 z += 1
                 if(d > 1):
                     poly += F.fetch_int(int(coef, 2)) * (vars[j] * vars[k])
@@ -339,112 +339,153 @@ def decodePolynomials(polynomials, n, m, vars, F, d, K):
                 PolySet[i] = poly
         return PolySet
 
+def writePrivateKey(filename, n, m, theta, p, k, ext, K):
+    bigPoly = p^k - 1
+    file = open(filename + "_private", "w")
+    file.write("S = " + "\n")
+    for i in range(n):
+        for j in range(m):
+            if k == 1:
+                file.write(str(Integer(getrandbits(1))) + " ")
+            else:
+                file.write(str(K.fetch_int(bigPoly)) + " ")
+        file.write("\n")
+    file.write("s = ")
+    for i in range(n):
+        if k == 1:
+            file.write(str(Integer(getrandbits(1))) + " ")
+        else:
+            file.write(str(K.fetch_int(bigPoly)) + " ")
+    file.write("\n")
+    file.write("T = " + "\n")
+    for i in range(n):
+        for j in range(m):
+            if k == 1:
+                file.write(str(Integer(getrandbits(1))) + " ")
+            else:
+                file.write(str(K.fetch_int(bigPoly)) + " ")
+        file.write("\n")
+    file.write("t = ")
+    for i in range(n):
+        if k == 1:
+            file.write(str(Integer(getrandbits(1))) + " ")
+        else:
+            file.write(str(K.fetch_int(bigPoly)) + " ")
+    file.write("\nn = " + str(n) + "\n")
+    file.write("m = " + str(m) + "\n")
+    file.write("theta = " + str(theta) + "\n")
+    file.write("p = " + str(p) + "\n")
+    file.write("k = " + str(k) + "\n")
+    file.write("ext = " + str(ext) + "\n")
+    file.close()
+
 print "**********Generate polynomials**********"
 
-Debug = False
 
-# for I in xrange(2, 100):
-# msg   = '\nNumber of variables to use: '
-# RC, n = getInteger(msg)
-# if(RC != 0):
-# 	sys.exit(1)
 
-# msg   = '\nNumber of polynomials: '
-# RC, m = getInteger(msg)
-# if(RC != 0):
-# 	sys.exit(2)
+for I in xrange(2, 101):
+    # msg   = '\nNumber of variables to use: '
+    # RC, n = getInteger(msg)
+    # if(RC != 0):
+    # 	sys.exit(1)
 
-# msg   = '\nFinite field characteristic: '
-# RC, p = getInteger(msg)
-# if(RC != 0):
-# 	sys.exit(3)
+    # msg   = '\nNumber of polynomials: '
+    # RC, m = getInteger(msg)
+    # if(RC != 0):
+    # 	sys.exit(2)
 
-# msg   = '\nFinite field degree: '
-# RC, d = getInteger(msg)
-# if(RC != 0):
-# 	sys.exit(1)
-n = 100
-m = n
-p = 2
-d = int(1)
+    # msg   = '\nFinite field characteristic: '
+    # RC, p = getInteger(msg)
+    # if(RC != 0):
+    # 	sys.exit(3)
 
-# R.<X> = GF(p)[]
-r = PolynomialRing(GF(p), 'X')
-k = GF(p**d, 'x', GF(p)['X'].irreducible_element(d))
-# k.<x> = GF(p**d, GF(p)['X'].irreducible_element(d))
-K = PolynomialRing(k, "x", n, order='deglex')
+    # msg   = '\nFinite field degree: '
+    # RC, d = getInteger(msg)
+    # if(RC != 0):
+    # 	sys.exit(1)
+    n = I
+    m = n
+    p = 2
+    d = int(7)
 
-#Vector para la codificacion de los polinomios
-#
-# Ejemplo de codificacion para un polinomio
-# vector:
-# (a00, a01, ..., ann, b0, b1, ..., bn, c)
-#
-# vectorSize = (n * (n + 1)) / 2
-vectorSize = (n * (n + 1)) + 1
+    # R.<X> = GF(p)[]
+    r = PolynomialRing(GF(p), 'X')
+    k = GF(p**d, 'x', GF(p)['X'].irreducible_element(d))
+    # k.<x> = GF(p**d, GF(p)['X'].irreducible_element(d))
+    K = PolynomialRing(k, "x", n, order='deglex')
 
-#len(Integer(getrandbits(2048)).binary())
-vars = []
-vars.append(1)
-for i in range(n):
-	vars.append(K.gens()[i])
+    #Vector para la codificacion de los polinomios
+    #
+    # Ejemplo de codificacion para un polinomio
+    # vector:
+    # (a00, a01, ..., ann, b0, b1, ..., bn, c)
+    #
+    # vectorSize = (n * (n + 1)) / 2
+    vectorSize = (n * (n + 1)) + 1
 
-# PolySet = generatePolynomials(n, m, K.gens(), k)
-PolySet, num = genPolynomials(n + 1, m, vars, k, d, K)
+    #len(Integer(getrandbits(2048)).binary())
+    vars = []
+    vars.append(1)
+    for i in range(n):
+    	vars.append(K.gens()[i])
 
-filename = writePolys(PolySet, m, n, False)
+    # PolySet = generatePolynomials(n, m, K.gens(), k)
+    PolySet, num = genPolynomials(n + 1, m, vars, k, d, K)
 
-##########################################################
-##########################################################
-########        Encoding Polynomials ASN.1      ##########
-##########################################################
-##########################################################
+    filename = writePolys(PolySet, m, n, False)
+    writePrivateKey(filename, n, n, 11, p, d, 100, k)
 
-# msg   = '\nEncode polynomials (yes/no): '
-# inp = getYesNo(msg)
-# if(inp == 0):
-#     sys.exit(0)
+    ##########################################################
+    ##########################################################
+    ########        Encoding Polynomials ASN.1      ##########
+    ##########################################################
+    ##########################################################
 
-encoder = SflashEncoder("BER")
+    # msg   = '\nEncode polynomials (yes/no): '
+    # inp = getYesNo(msg)
+    # if(inp == 0):
+    #     sys.exit(0)
 
-publicBin = encoder.encodePublicKey(PolySet, n, p, d)
-# publicBin = encoder.encodePublicKey(PolySet, n, p, d, bin(num)[2:])
+    encoder = SflashEncoder("BER")
 
-file = open(filename + ".pub", "wb")
-file.write(publicBin)
-print("Public key has been store in " + file.name)
-file.close()
+    publicBin = encoder.encodePublicKey(PolySet, n, p, d)
+    # publicBin = encoder.encodePublicKey(PolySet, n, p, d, bin(num)[2:])
 
-AG = AffineGroup(n, k)
-affine1 = AG.random_element()
-affine2 = AG.random_element()
-theta = 11
+    file = open(filename + ".pub", "wb")
+    file.write(publicBin)
+    print("Public key has been store in " + file.name)
+    file.close()
 
-privateBin = encoder.encodePrivateKey(affine1, affine2, p, d, theta)
+    AG = AffineGroup(n, k)
+    affine1 = AG.random_element()
+    affine2 = AG.random_element()
+    theta = 11
 
-file = open(filename + ".priv", "wb")
-file.write(privateBin)
-print("Private key has been store in " + file.name)
-file.close()
+    privateBin = encoder.encodePrivateKey(affine1, affine2, p, d, theta)
 
-##########################################################
-##########################################################
-########        Decoding Polynomials ASN.1      ##########
-##########################################################
-##########################################################
+    file = open(filename + ".priv", "wb")
+    file.write(privateBin)
+    print("Private key has been store in " + file.name)
+    file.close()
 
-decoder = SflashDecoder("BER")
+    ##########################################################
+    ##########################################################
+    ########        Decoding Polynomials ASN.1      ##########
+    ##########################################################
+    ##########################################################
 
-file = open(filename + ".pub", "rb")
+    # decoder = SflashDecoder("BER")
 
-# publicKey = decoder.decodePublicKey(file)
-# nd, pd, baseField, decodedPoly = decoder.decodePublicKey(file)
-polys = decoder.decodePublicKey(file)
+    # file = open(filename + ".pub", "rb")
 
-file.close()
+    # # publicKey = decoder.decodePublicKey(file)
+    # # nd, pd, baseField, decodedPoly = decoder.decodePublicKey(file)
+    # polys = decoder.decodePublicKey(file)
 
-file = open(filename + ".priv", "rb")
+    # file.close()
 
-nPriv, SPriv, sPriv, mPriv, TPriv, tPriv, pPriv, baseFieldPriv, thetaPriv = decoder.decodePrivateKey(file)
+    # file = open(filename + ".priv", "rb")
 
-file.close()
+    # nPriv, SPriv, sPriv, mPriv, TPriv, tPriv, pPriv, baseFieldPriv, thetaPriv = decoder.decodePrivateKey(file)
+
+    # file.close()

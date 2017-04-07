@@ -346,10 +346,35 @@ def decodePolynomials(polynomials, n, m, vars, F, d, K):
                 PolySet[i] = poly
         return PolySet
 
+def writePrivateKey(filename, n, m, theta, p, k, ext, K):
+    bigPoly = p^k - 1
+    file = open(filename + "_private", "w")
+    for i in range(n):
+        for j in range(m):
+            if k == 1:
+                file.write(str(Integer(getrandbits(1))))
+            else:
+                file.write(str(K.fetch_int(bigPoly)) + " ")
+        file.write("\n")
+    for i in range(n):
+        for j in range(m):
+            if k == 1:
+                file.write(str(Integer(getrandbits(1))))
+            else:
+                file.write(str(K.fetch_int(bigPoly)) + " ")
+        file.write("\n")
+    file.write(str(n) + "\n")
+    file.write(str(m) + "\n")
+    file.write(str(theta) + "\n")
+    file.write(str(p) + "\n")
+    file.write(str(k) + "\n")
+    file.write(str(ext) + "\n")
+    file.close()
+
+
 print "**********Generate polynomials**********"
 
 Debug = False
-mem = psutil.virtual_memory()
 
 msg   = '\nNumber of variables to use: '
 RC, n = getInteger(msg)
@@ -396,6 +421,7 @@ for i in range(n):
 PolySet, num = genPolynomials(n + 1, m, vars, k, d, K)
 
 filename = writePolys(PolySet, m, n, False)
+writePrivateKey(filename, n, n, 11, p, d, 100, k)
 
 ##########################################################
 ##########################################################

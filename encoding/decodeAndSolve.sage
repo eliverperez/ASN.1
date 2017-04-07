@@ -393,12 +393,12 @@ inp = getYesNo(msg)
 if(inp == 0):
 	sys.exit(0)
 
-Q = generateQPolynomials(PolySet, k, m)
+# Q = generateQPolynomials(PolySet, k, m)
 
-q_filename = writePolys(Q, m, n, True)
+# q_filename = writePolys(Q, m, n, True)
 
 polyfile = open(filename, "r")
-q_file = open(q_filename, "r")
+# q_file = open(q_filename, "r")
 
 groebner_basis_file = open(filename + "_GroebnerBasisOutput", "w")
 # q_groebner_basis_file = open(q_filename + "_GroebnerBasisOutput", "w")
